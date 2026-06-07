@@ -10,14 +10,15 @@ const hint = document.querySelector(".hint");
 const paper = document.querySelector(".paper");
 const fudeCursor = document.querySelector(".fude-cursor");
 
+const assetPath = (file) => `${import.meta.env.BASE_URL}assets/${file}`;
 const revealSources = [
-  "/assets/cherry-tree.png",
-  "/assets/daoist-pine-sage.png",
-  "/assets/daoist-waterfall-hermitage.png",
-  "/assets/daoist-crane-lotus.png",
-  "/assets/daoist-river-gorge.png",
-  "/assets/daoist-moon-gate.png",
-];
+  "cherry-tree.png",
+  "daoist-pine-sage.png",
+  "daoist-waterfall-hermitage.png",
+  "daoist-crane-lotus.png",
+  "daoist-river-gorge.png",
+  "daoist-moon-gate.png",
+].map(assetPath);
 const revealImages = revealSources.map((source) => {
   const artwork = new Image();
   artwork.src = source;
@@ -25,6 +26,7 @@ const revealImages = revealSources.map((source) => {
 });
 let revealIndex = 0;
 let image = revealImages[revealIndex];
+paper.style.setProperty("--fude-image", `url("${assetPath("fude-brush.png")}")`);
 
 let width = 0;
 let height = 0;

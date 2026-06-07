@@ -25,7 +25,8 @@ body {
 }
 
 .paper {
-  --reveal-image: url("/assets/cherry-tree.png");
+  --reveal-image: none;
+  --fude-image: none;
   position: relative;
   width: 100vw;
   height: 100svh;
@@ -144,7 +145,7 @@ body {
   transform-origin: 94.4% 92.2%;
   transform: translate(calc(var(--x) - 94.4%), calc(var(--y) - 92.2%)) rotate(calc(var(--angle) - 0.528rad));
   transition: opacity 0.22s ease, filter 0.12s ease;
-  background: url("/assets/fude-brush.png") center / contain no-repeat;
+  background: var(--fude-image) center / contain no-repeat;
   filter: drop-shadow(1px 4px 3px rgba(40, 30, 22, 0.16));
   will-change: transform;
 }
