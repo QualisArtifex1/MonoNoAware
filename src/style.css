@@ -1,0 +1,182 @@
+@import url("https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400&display=swap");
+
+:root {
+  color: #282624;
+  background: #fdfdfb;
+  font-family: "Shippori Mincho", "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #fdfdfb;
+}
+
+.paper {
+  --reveal-image: url("/assets/cherry-tree.png");
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: #fdfdfb;
+  background-image:
+    linear-gradient(88deg, rgba(60, 56, 48, 0.018), transparent 28%, rgba(255, 255, 255, 0.018) 62%),
+    linear-gradient(176deg, rgba(75, 68, 58, 0.012), transparent 42%, rgba(75, 68, 58, 0.01)),
+    radial-gradient(circle at 21% 18%, rgba(80, 72, 62, 0.018), transparent 22%),
+    radial-gradient(circle at 71% 74%, rgba(91, 79, 66, 0.014), transparent 26%);
+  background-size: 100% 100%, 100% 100%, 820px 620px, 760px 580px;
+}
+
+.paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: multiply;
+  background-image: var(--reveal-image);
+  background-size: cover;
+  filter: grayscale(1) contrast(0.15) brightness(2.7);
+}
+
+#painting {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: none;
+  touch-action: none;
+}
+
+.title {
+  position: absolute;
+  z-index: 6;
+  top: clamp(32px, 7vh, 72px);
+  right: clamp(25px, 4.2vw, 72px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.32em;
+  color: rgba(32, 30, 28, 0.78);
+  font-size: clamp(13px, 1.3vw, 19px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.invitation {
+  position: absolute;
+  z-index: 6;
+  bottom: clamp(24px, 5vh, 54px);
+  left: clamp(25px, 4.2vw, 72px);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  color: rgba(48, 44, 40, 0.62);
+  font-family: Georgia, serif;
+  font-size: clamp(9px, 0.76vw, 12px);
+  font-style: italic;
+  letter-spacing: 0.14em;
+  pointer-events: none;
+}
+
+.invitation i {
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.hint {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: clamp(54px, 8vh, 90px);
+  margin: 0;
+  opacity: 0;
+  color: rgba(42, 38, 34, 0.46);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  transform: translate(-50%, 8px);
+  transition: opacity 1.4s ease, transform 1.4s ease;
+  pointer-events: none;
+}
+
+.hint.is-present {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.hint.is-hidden {
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition-duration: 0.5s;
+}
+
+.fude-cursor {
+  --x: -500px;
+  --y: -500px;
+  --angle: -0.55rad;
+  position: absolute;
+  z-index: 8;
+  top: 0;
+  left: 0;
+  width: clamp(150px, 18vw, 230px);
+  aspect-ratio: 1586 / 992;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 94.4% 92.2%;
+  transform: translate(calc(var(--x) - 94.4%), calc(var(--y) - 92.2%)) rotate(calc(var(--angle) - 0.528rad));
+  transition: opacity 0.22s ease, filter 0.12s ease;
+  background: url("/assets/fude-brush.png") center / contain no-repeat;
+  filter: drop-shadow(1px 4px 3px rgba(40, 30, 22, 0.16));
+  will-change: transform;
+}
+
+.fude-cursor.is-visible {
+  opacity: 0.96;
+}
+
+.fude-cursor.is-pressed {
+  filter: drop-shadow(1px 2px 2px rgba(40, 30, 22, 0.12));
+}
+
+@media (max-width: 700px) {
+  .title {
+    top: 24px;
+    right: 20px;
+  }
+
+  .invitation {
+    bottom: 22px;
+    left: 20px;
+  }
+
+  .paper::after {
+    background-size: auto 100%;
+    background-position: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint,
+  .fude-cursor {
+    transition-duration: 0.01ms;
+  }
+}
