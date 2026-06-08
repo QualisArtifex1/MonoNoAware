@@ -1,5 +1,3 @@
-import "./style.css";
-
 const canvas = document.querySelector("#painting");
 const ctx = canvas.getContext("2d");
 const maskCanvas = document.createElement("canvas");
@@ -10,7 +8,12 @@ const hint = document.querySelector(".hint");
 const paper = document.querySelector(".paper");
 const fudeCursor = document.querySelector(".fude-cursor");
 
-const assetPath = (file) => `${import.meta.env.BASE_URL}assets/${file}`;
+const assetPath = (file) => {
+  const baseUrl = import.meta.env?.BASE_URL;
+  return baseUrl
+    ? `${baseUrl}assets/${file}`
+    : new URL(`../public/assets/${file}`, import.meta.url).href;
+};
 const revealSources = [
   "cherry-tree.png",
   "daoist-pine-sage.png",
