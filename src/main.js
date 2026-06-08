@@ -164,7 +164,7 @@ function createBackruns(brushWidth) {
 }
 
 function addMark(from, to, pressure, speed, isTouch = false) {
-  const base = Math.min(width, height) * 0.072;
+  const base = Math.min(width, height) * 0.094;
   const brushWidth = base * (0.7 + pressure * 0.5) * Math.max(0.72, 1.08 - speed * 0.42);
   const dx = to.x - from.x;
   const dy = to.y - from.y;
