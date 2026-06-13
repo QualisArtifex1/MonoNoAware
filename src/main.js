@@ -6,6 +6,10 @@ const grainCanvas = document.createElement("canvas");
 const grainCtx = grainCanvas.getContext("2d");
 const brushStampCanvas = document.createElement("canvas");
 const brushStampCtx = brushStampCanvas.getContext("2d");
+const washPatternCanvas = document.createElement("canvas");
+const washPatternCtx = washPatternCanvas.getContext("2d");
+const washMaskCanvas = document.createElement("canvas");
+const washMaskCtx = washMaskCanvas.getContext("2d", { willReadFrequently: true });
 const hint = document.querySelector(".hint");
 const paper = document.querySelector(".paper");
 const fudeCursor = document.querySelector(".fude-cursor");
@@ -39,6 +43,7 @@ washTexture.src = assetPath("watercolor-wash-texture.jpg");
 const generalWashShape = new Image();
 generalWashShape.src = assetPath("general-wash-shape.jpg");
 let brushStampReady = false;
+let washPatternReady = false;
 
 let width = 0;
 let height = 0;
@@ -128,6 +133,34 @@ function buildGeneralWashStamp() {
   brushStampCanvas.height = cropHeight;
   brushStampCtx.drawImage(sourceCanvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
   brushStampReady = true;
+}
+
+function buildWashPattern() {
+  if (!washTexture.naturalWidth) return;
+
+  const size = 720;
+  washPatternCanvas.width = size;
+  washPatternCanvas.height = size;
+  washPatternCtx.clearRect(0, 0, size, size);
+  washPatternCtx.filter = "grayscale(1) contrast(185%) brightness(122%)";
+  drawCoverImage(washPatternCtx, washTexture, size, size);
+  washPatternCtx.filter = "none";
+
+  washMaskCanvas.width = size;
+  washMaskCanvas.height = size;
+  washMaskCtx.clearRect(0, 0, size, size);
+  washMaskCtx.drawImage(washPatternCanvas, 0, 0);
+  const mask = washMaskCtx.getImageData(0, 0, size, size);
+  for (let index = 0; index < mask.data.length; index += 4) {
+    const luminance = mask.data[index] / 255;
+    const pigment = 0.66 + (1 - luminance) * 0.34;
+    mask.data[index] = 0;
+    mask.data[index + 1] = 0;
+    mask.data[index + 2] = 0;
+    mask.data[index + 3] = Math.round(pigment * 255);
+  }
+  washMaskCtx.putImageData(mask, 0, 0);
+  washPatternReady = true;
 }
 
 function resize() {
@@ -498,6 +531,18 @@ function drawMask(now) {
   maskCtx.globalAlpha = 0.62;
   maskCtx.drawImage(grainCanvas, 0, 0, width, height);
   maskCtx.restore();
+
+  if (washPatternReady) {
+    const washMask = maskCtx.createPattern(washMaskCanvas, "repeat");
+    if (washMask) {
+      maskCtx.save();
+      maskCtx.globalCompositeOperation = "destination-in";
+      maskCtx.globalAlpha = 1;
+      maskCtx.fillStyle = washMask;
+      maskCtx.fillRect(0, 0, width, height);
+      maskCtx.restore();
+    }
+  }
 }
 
 function drawCoverImage(context, artwork, targetWidth, targetHeight) {
@@ -506,6 +551,20 @@ function drawCoverImage(context, artwork, targetWidth, targetHeight) {
   const drawWidth = artwork.naturalWidth * scale;
   const drawHeight = artwork.naturalHeight * scale;
   context.drawImage(artwork, (targetWidth - drawWidth) / 2, (targetHeight - drawHeight) / 2, drawWidth, drawHeight);
+}
+
+function drawWashTexture(context, targetWidth, targetHeight) {
+  if (!washPatternReady) return;
+
+  const pattern = context.createPattern(washPatternCanvas, "repeat");
+  if (!pattern) return;
+
+  context.save();
+  context.globalCompositeOperation = "multiply";
+  context.globalAlpha = 0.38;
+  context.fillStyle = pattern;
+  context.fillRect(0, 0, targetWidth, targetHeight);
+  context.restore();
 }
 
 function animateBrush(now) {
@@ -545,9 +604,7 @@ function draw(now) {
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   ctx.drawImage(image, imageRect.x, imageRect.y, imageRect.width, imageRect.height);
-  ctx.globalCompositeOperation = "multiply";
-  ctx.globalAlpha = 0.2;
-  drawCoverImage(ctx, washTexture, width, height);
+  drawWashTexture(ctx, width, height);
   ctx.globalCompositeOperation = "destination-in";
   ctx.globalAlpha = 1;
   ctx.drawImage(maskCanvas, 0, 0, width, height);
@@ -586,9 +643,11 @@ canvas.addEventListener("pointerleave", (event) => {
 window.addEventListener("resize", resize);
 revealImages.forEach((artwork) => artwork.addEventListener("load", resize));
 generalWashShape.addEventListener("load", buildGeneralWashStamp);
+washTexture.addEventListener("load", buildWashPattern);
 setRevealImage(0);
 resize();
 buildGeneralWashStamp();
+buildWashPattern();
 requestAnimationFrame(draw);
 
 window.setTimeout(() => {
