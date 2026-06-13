@@ -4,6 +4,8 @@ const maskCanvas = document.createElement("canvas");
 const maskCtx = maskCanvas.getContext("2d");
 const grainCanvas = document.createElement("canvas");
 const grainCtx = grainCanvas.getContext("2d");
+const brushStampCanvas = document.createElement("canvas");
+const brushStampCtx = brushStampCanvas.getContext("2d");
 const hint = document.querySelector(".hint");
 const paper = document.querySelector(".paper");
 const fudeCursor = document.querySelector(".fude-cursor");
@@ -30,6 +32,13 @@ const revealImages = revealSources.map((source) => {
 let revealIndex = 0;
 let image = revealImages[revealIndex];
 paper.style.setProperty("--fude-image", `url("${assetPath("fude-brush.png")}")`);
+paper.style.setProperty("--paper-image", `url("${assetPath("watercolor-paper.jpg")}")`);
+
+const washTexture = new Image();
+washTexture.src = assetPath("watercolor-wash-texture.jpg");
+const generalWashShape = new Image();
+generalWashShape.src = assetPath("general-wash-shape.jpg");
+let brushStampReady = false;
 
 let width = 0;
 let height = 0;
@@ -75,6 +84,50 @@ function buildPaperGrain() {
       grainCtx.fill();
     }
   }
+}
+
+function buildGeneralWashStamp() {
+  if (!generalWashShape.naturalWidth) return;
+
+  const sourceCanvas = document.createElement("canvas");
+  const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+  const size = 512;
+  sourceCanvas.width = size;
+  sourceCanvas.height = size;
+  sourceCtx.drawImage(generalWashShape, 0, 0, size, size);
+
+  const source = sourceCtx.getImageData(0, 0, size, size);
+  let minX = size;
+  let minY = size;
+  let maxX = 0;
+  let maxY = 0;
+
+  for (let index = 0; index < source.data.length; index += 4) {
+    const luminance = source.data[index] / 255;
+    const alpha = Math.round(Math.pow(Math.max(0, luminance - 0.035) / 0.965, 1.18) * 255);
+    source.data[index] = 0;
+    source.data[index + 1] = 0;
+    source.data[index + 2] = 0;
+    source.data[index + 3] = alpha;
+
+    if (alpha > 8) {
+      const pixel = index / 4;
+      const x = pixel % size;
+      const y = Math.floor(pixel / size);
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  sourceCtx.putImageData(source, 0, 0);
+  const cropWidth = Math.max(1, maxX - minX + 1);
+  const cropHeight = Math.max(1, maxY - minY + 1);
+  brushStampCanvas.width = cropWidth;
+  brushStampCanvas.height = cropHeight;
+  brushStampCtx.drawImage(sourceCanvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  brushStampReady = true;
 }
 
 function resize() {
@@ -182,11 +235,34 @@ function addMark(from, to, pressure, speed, isTouch = false) {
     born: now,
     life,
     wash: 0.22 + Math.random() * 0.14,
+    stampOpacity: 0.13 + Math.random() * 0.12,
+    stampRotation: (Math.random() - 0.5) * 0.34,
+    stampScaleX: 1.18 + Math.random() * 0.38,
+    stampScaleY: 0.78 + Math.random() * 0.28,
+    stampOffset: (Math.random() - 0.5) * brushWidth * 0.24,
     isTouch,
     feathers: createFeathers(),
     backruns: createBackruns(brushWidth),
     bristles: createBristles(Math.min(18, Math.round(brushWidth / 4.8)), speed),
   });
+}
+
+function drawGeneralWashStamp(mark, alpha) {
+  if (!brushStampReady) return;
+
+  const normalX = -Math.sin(mark.angle);
+  const normalY = Math.cos(mark.angle);
+  const centerX = (mark.from.x + mark.to.x) / 2 + normalX * mark.stampOffset;
+  const centerY = (mark.from.y + mark.to.y) / 2 + normalY * mark.stampOffset;
+  const stampWidth = mark.width * mark.stampScaleX;
+  const stampHeight = mark.width * mark.stampScaleY;
+
+  maskCtx.save();
+  maskCtx.translate(centerX, centerY);
+  maskCtx.rotate(mark.angle + mark.stampRotation);
+  maskCtx.globalAlpha = alpha * mark.stampOpacity;
+  maskCtx.drawImage(brushStampCanvas, -stampWidth / 2, -stampHeight / 2, stampWidth, stampHeight);
+  maskCtx.restore();
 }
 
 function paintBetween(from, to, elapsed) {
@@ -411,6 +487,7 @@ function drawMask(now) {
     if (alpha <= 0) continue;
     if (mark.isTouch) drawTouch(mark, alpha);
     if (mark.isBleed) continue;
+    drawGeneralWashStamp(mark, alpha);
     drawWash(mark, alpha);
     drawBristles(mark, alpha);
     drawBackruns(mark, age, alpha);
@@ -421,6 +498,14 @@ function drawMask(now) {
   maskCtx.globalAlpha = 0.62;
   maskCtx.drawImage(grainCanvas, 0, 0, width, height);
   maskCtx.restore();
+}
+
+function drawCoverImage(context, artwork, targetWidth, targetHeight) {
+  if (!artwork.naturalWidth) return;
+  const scale = Math.max(targetWidth / artwork.naturalWidth, targetHeight / artwork.naturalHeight);
+  const drawWidth = artwork.naturalWidth * scale;
+  const drawHeight = artwork.naturalHeight * scale;
+  context.drawImage(artwork, (targetWidth - drawWidth) / 2, (targetHeight - drawHeight) / 2, drawWidth, drawHeight);
 }
 
 function animateBrush(now) {
@@ -460,7 +545,11 @@ function draw(now) {
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   ctx.drawImage(image, imageRect.x, imageRect.y, imageRect.width, imageRect.height);
+  ctx.globalCompositeOperation = "multiply";
+  ctx.globalAlpha = 0.2;
+  drawCoverImage(ctx, washTexture, width, height);
   ctx.globalCompositeOperation = "destination-in";
+  ctx.globalAlpha = 1;
   ctx.drawImage(maskCanvas, 0, 0, width, height);
   ctx.restore();
 
@@ -496,8 +585,10 @@ canvas.addEventListener("pointerleave", (event) => {
 
 window.addEventListener("resize", resize);
 revealImages.forEach((artwork) => artwork.addEventListener("load", resize));
+generalWashShape.addEventListener("load", buildGeneralWashStamp);
 setRevealImage(0);
 resize();
+buildGeneralWashStamp();
 requestAnimationFrame(draw);
 
 window.setTimeout(() => {

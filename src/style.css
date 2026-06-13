@@ -27,6 +27,7 @@ body {
 .paper {
   --reveal-image: none;
   --fude-image: none;
+  --paper-image: none;
   position: relative;
   width: 100vw;
   height: 100svh;
@@ -34,11 +35,13 @@ body {
   isolation: isolate;
   background-color: #fdfdfb;
   background-image:
+    var(--paper-image),
     linear-gradient(88deg, rgba(60, 56, 48, 0.018), transparent 28%, rgba(255, 255, 255, 0.018) 62%),
     linear-gradient(176deg, rgba(75, 68, 58, 0.012), transparent 42%, rgba(75, 68, 58, 0.01)),
     radial-gradient(circle at 21% 18%, rgba(80, 72, 62, 0.018), transparent 22%),
     radial-gradient(circle at 71% 74%, rgba(91, 79, 66, 0.014), transparent 26%);
-  background-size: 100% 100%, 100% 100%, 820px 620px, 760px 580px;
+  background-position: center, center, center, center, center;
+  background-size: cover, 100% 100%, 100% 100%, 820px 620px, 760px 580px;
 }
 
 .paper::after {
@@ -47,7 +50,7 @@ body {
   inset: 0;
   z-index: 4;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.34;
   mix-blend-mode: multiply;
   background-image:
     linear-gradient(96deg, rgba(63, 55, 43, 0.018), transparent 34%, rgba(255, 255, 255, 0.022) 68%),
